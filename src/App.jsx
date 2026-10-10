@@ -1,18 +1,54 @@
-import React from 'react'
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Login from './pages/Login';
-import Home from './pages/Home';
+import React from "react";
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
+
+import Login from "./pages/Login";
+import Signup from "./pages/Signup";
+import Dashboard from "./pages/Dashboard";
+
+import ProtectedRoute from "./components/ProtectedRoutes";
+
 const App = () => {
   return (
-    <div>
-      <BrowserRouter>
+    <BrowserRouter>
       <Routes>
-        <Route path="/login" element={<Login/>} />
-        <Route path="/" element={<Home/>} />
-      </Routes>
-      </BrowserRouter>
-    </div>
-  )
-}
 
-export default App
+        <Route
+          path="/"
+          element={
+            <Navigate
+              to="/login"
+              replace
+            />
+          }
+        />
+
+        <Route
+          path="/login"
+          element={<Login />}
+        />
+
+        <Route
+          path="/signup"
+          element={<Signup />}
+        />
+
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          }
+        />
+
+      </Routes>
+    </BrowserRouter>
+  );
+};
+
+export default App;

@@ -1,188 +1,127 @@
 
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import apiClient from "../apiClient/apiClient";
-import Img from "../assets/Login.png";
-import { CircleDashed } from "lucide-react";
+import { useNavigate, Link } from "react-router-dom";
+import { loginUser } from "../services/authService";
 
 const Login = () => {
   const navigate = useNavigate();
 
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
+  });
+
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    setLoading(true);
-    setError("");
-
     try {
-      const data = {
-        email,
-        password,
-      };
+      setLoading(true);
+      setError("");
 
-      const response = await apiClient.post("/login", data);
+      const data = await loginUser(formData);
 
-      console.log(response.data);
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("user", JSON.stringify(data.user));
 
-      localStorage.setItem("authToken", response.data.accesstoken);
-      localStorage.setItem("User Id", response.data.user_id);
-      localStorage.setItem("Role", response.data.role);
-      localStorage.setItem("Username", response.data.username);
-
-      window.location.href = "/";
+      navigate("/dashboard");
     } catch (error) {
-      console.error("Error logging in:", error);
-
-      let errorMessage = "Login failed. Please try again.";
-
-      if (error?.response?.data?.message) {
-        errorMessage = error.response.data.message;
-      } else if (error instanceof Error) {
-        errorMessage = error.message;
-      }
-
-      setError(errorMessage);
-
-      setTimeout(() => {
-        setError("");
-      }, 4000);
-
+      setError(error.response?.data?.message || "Login failed");
+    } finally {
       setLoading(false);
     }
   };
 
-  const handleRouter = () => {
-    navigate("/");
-  };
-
   return (
-    <div className="w-full min-h-screen flex items-center justify-center bg-gradient-to-r from-purple-300 to-blue-400">
-      {/* Login Section */}
-      <div className="md:w-1/2 w-full items-center flex justify-center">
-        <form
-          onSubmit={handleSubmit}
-          className="p-8 rounded-xl shadow-xl w-md"
-        >
-          <h2 className="text-2xl font-bold mb-6 text-center">
-            Login
-          </h2>
+    <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-8">
+      <div className="w-full max-w-md rounded-xl border border-gray-200 bg-white p-6 shadow-sm sm:p-8">
+        <h1 className="text-center text-2xl font-semibold text-gray-800">
+          Welcome Back
+        </h1>
 
-          {/* Email */}
-          <div className="mb-4">
-            <label className="block text-lg font-medium text-gray-900 mb-1">
-              Email
+        <p className="mt-2 text-center text-sm text-gray-500">
+          Login to your account
+        </p>
+
+        {error && (
+          <p className="mt-5 rounded-md bg-red-50 px-3 py-2 text-sm text-red-600">
+            {error}
+          </p>
+        )}
+
+        <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+          <div>
+            <label
+              htmlFor="email"
+              className="mb-1.5 block text-sm font-medium text-gray-700"
+            >
+              Email Address
             </label>
 
             <input
+              id="email"
               type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              name="email"
               placeholder="Enter your email"
-              className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-gray-400"
+              value={formData.email}
+              onChange={handleChange}
               required
+              autoComplete="email"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
             />
           </div>
 
-          {/* Password */}
-          <div className="mb-4 relative">
-            <label className="block text-lg font-medium text-gray-900 mb-1">
+          <div>
+            <label
+              htmlFor="password"
+              className="mb-1.5 block text-sm font-medium text-gray-700"
+            >
               Password
             </label>
 
             <input
-              type={showPassword ? "text" : "password"}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              id="password"
+              type="password"
+              name="password"
               placeholder="Enter your password"
-              className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-gray-400 pr-16"
+              value={formData.password}
+              onChange={handleChange}
               required
+              autoComplete="current-password"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
             />
-
-            {/* Show / Hide Password */}
-            <button
-              type="button"
-              onClick={() => setShowPassword((prev) => !prev)}
-              className="absolute right-3 top-11 text-gray-800 text-sm focus:outline-none cursor-pointer"
-            >
-              {showPassword ? "Hide" : "Show"}
-            </button>
           </div>
 
-          {/* Navigation Links */}
-          <div className="flex justify-between items-center mb-3.5">
-            <p
-              onClick={handleRouter}
-              className="text-gray-600 hover:underline underline-offset-2 cursor-pointer"
-            >
-              Back to Home
-            </p>
-
-            <p
-              onClick={() => navigate("/forgot")}
-              className="text-gray-600 hover:underline underline-offset-2 cursor-pointer"
-            >
-              Forgot Password?
-            </p>
-          </div>
-
-          {/* Error Message */}
-          {error && (
-            <p className="text-red-600 text-center mb-2">
-              {error}
-            </p>
-          )}
-
-          {/* Login Button */}
-          <div className="flex justify-center items-center">
-            {loading ? (
-              <button
-                type="button"
-                disabled
-                className="w-full text-white py-2 rounded-md bg-gray-700 mt-3 flex justify-center items-center gap-2"
-              >
-                <CircleDashed className="animate-spin" />
-                Loading...
-              </button>
-            ) : (
-              <button
-                type="submit"
-                className="w-full text-white py-2 rounded-md hover:bg-blue-700 bg-blue-600 mt-3"
-              >
-                Login
-              </button>
-            )}
-          </div>
-
-          {/* Register */}
-          <p className="text-sm text-center mt-4 text-gray-800">
-            Don't have an account?{" "}
-            <a
-              href="/register"
-              className="text-blue-600 hover:underline"
-            >
-              Register
-            </a>
-          </p>
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full rounded-lg bg-blue-600 py-2.5 text-sm font-medium text-white transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {loading ? "Logging in..." : "Login"}
+          </button>
         </form>
-      </div>
 
-      {/* Image Section */}
-      <div className="w-1/2 h-full md:flex hidden items-center justify-center">
-        <img
-          src={Img}
-          alt="Login"
-          className="rounded-xl h-screen ml-6"
-        />
+        <p className="mt-6 text-center text-sm text-gray-600">
+          Don't have an account?{" "}
+          <Link
+            to="/signup"
+            className="font-medium text-blue-600 hover:text-blue-700 hover:underline"
+          >
+            Sign Up
+          </Link>
+        </p>
       </div>
     </div>
   );
 };
 
 export default Login;
-
